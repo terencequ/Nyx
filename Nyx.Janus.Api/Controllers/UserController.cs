@@ -15,6 +15,7 @@ using Nyx.Janus.Api.Security;
 using Nyx.Janus.Api.Data;
 using Nyx.Janus.Api.Config;
 using Microsoft.Extensions.Options;
+using Nyx.Janus.Api.Models.Response;
 
 namespace Nyx.Janus.Api.Controllers
 {
@@ -28,8 +29,8 @@ namespace Nyx.Janus.Api.Controllers
         private readonly SecurityOptions _securityOptions;
 
         public UserController(
-            JanusContext context, 
-            ILogger<UserController> logger, 
+            JanusContext context,
+            ILogger<UserController> logger,
             IOptions<SecurityOptions> securityOptions)
         {
             _context = context;
@@ -40,7 +41,7 @@ namespace Nyx.Janus.Api.Controllers
         /// <summary>
         /// Create a new user account, when supplied with a new email.
         /// </summary>
-        /// <param name="registerRequest"></param>
+        /// <param name="registerRequest">New account details</param>
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("register")]
@@ -68,9 +69,9 @@ namespace Nyx.Janus.Api.Controllers
             _context.SaveChanges();
 
             return Ok(
-                new { 
+                new UserResponse
+                {
                     Message = "Registered user successfully.",
-
                     DisplayName = user.DisplayName,
                     Email = user.Email,
                     CreationDate = user.CreationDate.ToString()
@@ -94,7 +95,7 @@ namespace Nyx.Janus.Api.Controllers
                 return Unauthorized(new { Message = "Email is not registered to any user." });
             }
             bool verified = HashUtils.VerifyHashedPassword(user.Password, loginRequest.Password);
-            if(!verified)
+            if (!verified)
             {
                 _logger.LogInformation($"{loginRequest.Email} tried to log in, but failed to provide correct password. ");
                 return Unauthorized(new { Message = "Incorrect password." });
@@ -104,16 +105,16 @@ namespace Nyx.Janus.Api.Controllers
 
             _logger.LogInformation($"{loginRequest.Email} logged in successfully, and generated a token.");
             return Ok(
-                new { 
-                    Message = "User logged in successfully.", 
+                new AuthTokenResponse
+                {
+                    Message = "User logged in successfully.",
                     Token = token,
-
                     DisplayName = user.DisplayName,
                     Email = user.Email,
                     CreationDate = user.CreationDate.ToString()
                 }
             );
-            
+
         }
 
         /// <summary>
@@ -134,20 +135,25 @@ namespace Nyx.Janus.Api.Controllers
 
                 _logger.LogInformation($"{user.Email} retrieved their profile information. ");
                 // Return OK
-                return Ok(new 
-                {
-                    Message = "Profile obtained successfully.",
-
-                    DisplayName = user.DisplayName, 
-                    Email = user.Email, 
-                    CreationDate = user.CreationDate.ToString() 
-                });
-            } catch
+                return Ok(
+                    new UserResponse
+                    {
+                        Message = "Profile obtained successfully.",
+                        DisplayName = user.DisplayName,
+                        Email = user.Email,
+                        CreationDate = user.CreationDate.ToString()
+                    }
+                );
+            }
+            catch
             {
                 _logger.LogInformation($" {userId} tried to retrieve their profile information, but failed. ");
-                return NotFound(new { 
-                    Message = "Could not find profile."
-                });
+                return NotFound(
+                    new Response
+                    {
+                        Message = "Could not find profile."
+                    }
+                );
             }
         }
 
@@ -159,9 +165,10 @@ namespace Nyx.Janus.Api.Controllers
         public IActionResult Logout()
         {
             HttpContext.Response.Headers.Add("Authorization", "");
-            return Ok(new 
-                { 
-                    Message = "User logged out successfully." 
+            return Ok(
+                new Response
+                {
+                    Message = "User logged out successfully."
                 }
             );
         }
