@@ -22,6 +22,8 @@ namespace Nyx.Janus.Api
 {
     public class Startup
     {
+        readonly string AllowJanusCORS = "JanusCORSPolicy";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -35,6 +37,7 @@ namespace Nyx.Janus.Api
             ConfigureSettings(services);
             ConfigureRepositories(services);
             ConfigureSecurity(services);
+            ConfigureCORS(services);
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -48,7 +51,7 @@ namespace Nyx.Janus.Api
             services.Configure<ConnectionStringsOptions>(Configuration.GetSection(ConnectionStringsOptions.ConnectionStrings));
             services.Configure<SecurityOptions>(Configuration.GetSection(SecurityOptions.Security));
         }
-    
+
         private void ConfigureRepositories(IServiceCollection services)
         {
             services.AddDbContext<JanusContext>(options =>
@@ -85,6 +88,24 @@ namespace Nyx.Janus.Api
             services.AddScoped<IAuthorizationHandler, UserIsValidHandler>();
         }
 
+        private void ConfigureCORS(IServiceCollection services)
+        {
+            services.AddCors(options =>
+            {
+                var frontendConnectionString = Configuration
+                    .GetSection(ConnectionStringsOptions.ConnectionStrings)
+                    .Get<ConnectionStringsOptions>()
+                    .FrontEnd;
+                options.AddPolicy(name: AllowJanusCORS,
+                                  builder =>
+                                  {
+                                      builder.WithOrigins(frontendConnectionString)
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod();
+                                  });
+            });
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -98,6 +119,8 @@ namespace Nyx.Janus.Api
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(AllowJanusCORS);
 
             app.UseAuthentication();
             app.UseAuthorization();

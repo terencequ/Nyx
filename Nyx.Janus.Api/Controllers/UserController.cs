@@ -156,21 +156,5 @@ namespace Nyx.Janus.Api.Controllers
                 );
             }
         }
-
-        /// <summary>
-        /// Remove the token from the header, and log out a user.
-        /// </summary>
-        /// <returns></returns>
-        [HttpDelete("logout")]
-        public IActionResult Logout()
-        {
-            HttpContext.Response.Headers.Add("Authorization", "");
-            return Ok(
-                new Response
-                {
-                    Message = "User logged out successfully."
-                }
-            );
-        }
     }
 }

@@ -9,6 +9,7 @@ namespace Nyx.Janus.Api.Config
     {
         public const string ConnectionStrings = "ConnectionStrings";
 
+        public string FrontEnd { get; set; }
         public string SQL { get; set; }
     }
 }
